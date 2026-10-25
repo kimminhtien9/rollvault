@@ -6,6 +6,8 @@ members = ["crates/rollvault-core", "src-tauri"]
 version = "0.1.0"
 edition = "2024"
 authors = ["RollVault"]
+license = "MIT"
+repository = "https://github.com/kimminhtien9/rollvault"
 
 # Panics must unwind (not abort): a bug inside one job thread is caught and
 # reported as a failed job instead of killing the app while other cards copy.

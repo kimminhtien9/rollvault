@@ -146,3 +146,7 @@ ASCMHL_BIN=.venv/bin/ascmhl ASCMHL_XSD_DIR=/path/to/xsd cargo test -p rollvault-
 - **exFAT drives.** macOS creates `._` AppleDouble files next to every file on exFAT. They are ignored in ASC MHL, as other DIT tools do.
 - **RAW formats.** BRAW, R3D and ARRIRAW need vendor SDKs for thumbnails, so the report lists them with hashes only.
 - **Laptops.** RollVault keeps the Mac awake, but closing a MacBook lid without an external display still sleeps it. The job stops and can be resumed.
+
+## License
+
+[MIT](LICENSE). The software is provided as is, without warranty. Always keep the camera card until RollVault reports it safe to eject, and test it alongside your existing workflow before relying on it.

@@ -4,6 +4,8 @@ description = "RollVault: DIT offload, verification and camera reports for macOS
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license.workspace = true
+repository.workspace = true
 publish = false
 
 [lib]
