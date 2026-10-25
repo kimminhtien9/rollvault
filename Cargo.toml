@@ -1,0 +1,19 @@
+[workspace]
+resolver = "3"
+members = ["crates/rollvault-core", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["RollVault"]
+
+# Panics must unwind (not abort): a bug inside one job thread is caught and
+# reported as a failed job instead of killing the app while other cards copy.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
+
+[profile.dev.package."*"]
+opt-level = 2

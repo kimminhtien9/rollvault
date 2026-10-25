@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSRemovableVolumesUsageDescription</key>
+  <string>RollVault đọc thẻ nhớ máy quay và ghi bản sao lên ổ gắn ngoài để offload footage.</string>
+  <key>NSNetworkVolumesUsageDescription</key>
+  <string>RollVault ghi và kiểm tra bản sao footage trên NAS.</string>
+  <key>NSDocumentsFolderUsageDescription</key>
+  <string>RollVault có thể dùng thư mục bạn chọn làm nguồn hoặc đích.</string>
+  <key>NSDesktopFolderUsageDescription</key>
+  <string>RollVault có thể dùng thư mục bạn chọn làm nguồn hoặc đích.</string>
+</dict>
+</plist>
