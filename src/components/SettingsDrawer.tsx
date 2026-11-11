@@ -2,7 +2,7 @@ import { CircleCheckBig, CircleX, ImagePlus, Trash } from "lucide-react";
 import type { ReactNode } from "react";
 import type { AppInfo } from "../types";
 import type { Settings } from "../lib/settings";
-import { DEFAULT_REPORT_TEMPLATE, DEFAULT_ROLL_TEMPLATE } from "../lib/settings";
+import { DEFAULT_REPORT_TEMPLATE, DEFAULT_ROLL_TEMPLATE, HISTORY_KEEP_DAYS } from "../lib/settings";
 import { useI18n } from "../i18n";
 import { Button, Drawer, Field, IconButton, Segmented, Switch } from "./ui";
 
@@ -56,6 +56,19 @@ export function SettingsDrawer(props: {
           />
         </Section>
 
+        <Section title={t.appearance}>
+          <Segmented
+            ariaLabel={t.appearance}
+            value={s.theme}
+            onChange={(v) => props.onChange({ theme: v })}
+            options={[
+              { value: "system", label: t.themeSystem },
+              { value: "light", label: t.themeLight },
+              { value: "dark", label: t.themeDark },
+            ]}
+          />
+        </Section>
+
         <Section title={t.settingsReport}>
           <Field label={t.company} htmlFor="rv-company">
             <input id="rv-company" className="field" value={s.company} placeholder={t.companyPlaceholder} onChange={(e) => props.onChange({ company: e.target.value })} />
@@ -101,6 +114,19 @@ export function SettingsDrawer(props: {
         <Section title={t.alerts}>
           <Switch checked={s.sounds} onChange={(v) => props.onChange({ sounds: v })} label={t.sounds} hint={t.soundsHint} />
           <Switch checked={s.notifications} onChange={(v) => props.onChange({ notifications: v })} label={t.notifications} />
+        </Section>
+
+        <Section title={t.history}>
+          <Field label={t.historyKeep} htmlFor="rv-keep">
+            <select id="rv-keep" className="field" value={s.historyKeepDays} onChange={(e) => props.onChange({ historyKeepDays: Number(e.target.value) })}>
+              {HISTORY_KEEP_DAYS.map((d) => (
+                <option key={d} value={d}>
+                  {d === 0 ? t.historyKeepForever : t.historyKeepDays(d)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <p className="text-[12px] text-faint">{t.historyKeepHint}</p>
         </Section>
 
         <Section title={t.tools}>

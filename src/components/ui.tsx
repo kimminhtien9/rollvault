@@ -17,10 +17,10 @@ export function Button(props: {
   const sizes = { sm: "h-7 px-2.5 text-[12px] gap-1.5", md: "h-8 px-3 text-[13px] gap-1.5", lg: "h-11 px-5 text-[14px] gap-2" };
   const variants: Record<Variant, string> = {
     primary: "bg-primary text-white hover:bg-primary-hover",
-    secondary: "bg-raised text-ink border border-line-strong hover:border-[#6b7a96]",
+    secondary: "bg-raised text-ink border border-line-strong hover:border-line-hover",
     ghost: "text-muted hover:text-ink hover:bg-raised",
     danger: "bg-bad-soft text-bad-ink border border-bad/50 hover:border-bad",
-    good: "bg-good text-[#052012] hover:brightness-110",
+    good: "bg-good text-on-good hover:brightness-110",
   };
   return (
     <button
@@ -82,7 +82,7 @@ export function Switch(props: { checked: boolean; onChange: (v: boolean) => void
         aria-checked={props.checked}
         disabled={props.disabled}
         onClick={() => props.onChange(!props.checked)}
-        className={`relative mt-0.5 h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ${props.checked ? "bg-primary" : "bg-[#3a4660]"}`}
+        className={`relative mt-0.5 h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ${props.checked ? "bg-primary" : "bg-track"}`}
       >
         <span
           className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-[left] duration-150 ${props.checked ? "left-[18px]" : "left-0.5"}`}
@@ -163,7 +163,7 @@ export function Step(props: { n: number; title: string; icon: ReactNode; actions
       <header className="mb-3 flex items-center gap-2.5">
         <span
           className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${
-            props.done ? "bg-good text-[#052012]" : "bg-raised text-muted ring-1 ring-line-strong"
+            props.done ? "bg-good text-on-good" : "bg-raised text-muted ring-1 ring-line-strong"
           }`}
           aria-hidden="true"
         >
@@ -228,7 +228,7 @@ export function Drawer(props: { title: string; children: ReactNode; onClose: () 
 
 export function UsageBar(props: { free: number; total: number }) {
   const used = props.total > 0 ? 100 - (props.free / props.total) * 100 : 0;
-  const tone = used > 92 ? "bg-bad" : used > 80 ? "bg-warn" : "bg-[#5b6b87]";
+  const tone = used > 92 ? "bg-bad" : used > 80 ? "bg-warn" : "bg-meter";
   return (
     <div className="h-1 w-full overflow-hidden rounded-full bg-sunken" aria-hidden="true">
       <div className={`h-full ${tone}`} style={{ width: `${Math.max(2, used)}%` }} />

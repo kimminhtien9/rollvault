@@ -979,6 +979,64 @@ impl Engine {
         self.save_history();
     }
 
+    /// Forget finished jobs: drops their history entries and crash journals
+    /// (app data only, never anything on a card or destination). Running
+    /// jobs and unknown ids are skipped. Returns how many entries went away.
+    pub fn delete_history(&self, ids: &[String]) -> usize {
+        let running: Vec<String> = self
+            .jobs
+            .lock()
+            .map(|jobs| jobs.iter().filter(|j| j.phase().is_active()).map(|j| j.id.clone()).collect())
+            .unwrap_or_default();
+        let mut removed = Vec::new();
+        if let Ok(mut h) = self.history.lock() {
+            h.retain(|e| {
+                let drop = ids.contains(&e.job_id) && !running.contains(&e.job_id) && !e.status.is_active();
+                if drop {
+                    removed.push(e.job_id.clone());
+                }
+                !drop
+            });
+        }
+        if removed.is_empty() {
+            return 0;
+        }
+        if let Ok(mut jobs) = self.jobs.lock() {
+            jobs.retain(|j| !removed.contains(&j.id) || j.phase().is_active());
+        }
+        self.save_history();
+        for id in &removed {
+            // Ids come from our own history file, but that file is editable:
+            // only ever delete a direct child of `<data>/jobs`.
+            let mut parts = Path::new(id).components();
+            if matches!((parts.next(), parts.next()), (Some(std::path::Component::Normal(_)), None)) {
+                let _ = fs::remove_dir_all(crate::journal::job_dir(&self.cfg.data_dir, id));
+            }
+        }
+        removed.len()
+    }
+
+    /// Auto-clean: forget fully completed jobs that finished more than
+    /// `days` days ago. Failed, cancelled and interrupted jobs are kept
+    /// (they may still be resumed) until the user deletes them.
+    pub fn prune_history(&self, days: u32) -> usize {
+        if days == 0 {
+            return 0;
+        }
+        let cutoff = Utc::now() - chrono::Duration::days(i64::from(days));
+        let old: Vec<String> = self
+            .history
+            .lock()
+            .map(|h| {
+                h.iter()
+                    .filter(|e| e.status == JobPhase::Completed && e.finished_at.unwrap_or(e.created_at) < cutoff)
+                    .map(|e| e.job_id.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
+        self.delete_history(&old)
+    }
+
     /// Eject the card a job read from. Refused while the card is being read.
     pub fn eject_source(&self, id: &str) -> Result<(), String> {
         let job = self.find(id).ok_or_else(|| l!("Job not found", "Không tìm thấy job"))?;

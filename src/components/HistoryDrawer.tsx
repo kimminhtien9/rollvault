@@ -1,9 +1,10 @@
-import { FileText, FolderOpen, RotateCcw, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { FileText, FolderOpen, RotateCcw, ShieldCheck, Trash } from "lucide-react";
 import type { HistoryEntry } from "../types";
 import { isActive } from "../types";
 import { bytes, dateTime } from "../lib/format";
 import { useI18n } from "../i18n";
-import { Button, Drawer, Pill } from "./ui";
+import { Button, Drawer, IconButton, Modal, Pill } from "./ui";
 
 export function HistoryDrawer(props: {
   entries: HistoryEntry[];
@@ -13,15 +14,46 @@ export function HistoryDrawer(props: {
   onReveal: (path: string) => void;
   onOpen: (path: string) => void;
   onVerify: (rollDir: string) => void;
+  onDelete: (ids: string[]) => void;
 }) {
   const { t } = useI18n();
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [confirm, setConfirm] = useState<string[] | null>(null);
   const sorted = [...props.entries].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  // Running jobs cannot be deleted.
+  const deletable = sorted.filter((h) => !props.activeIds.has(h.job_id) && !isActive(h.status)).map((h) => h.job_id);
+  const chosen = deletable.filter((id) => picked.has(id));
+  const toggle = (id: string) =>
+    setPicked((p) => {
+      const n = new Set(p);
+      if (!n.delete(id)) n.add(id);
+      return n;
+    });
   return (
     <Drawer title={t.historyTitle(sorted.length)} onClose={props.onClose} width={660} closeLabel={t.close}>
       {sorted.length === 0 ? (
         <p className="text-muted">{t.historyEmpty}</p>
       ) : (
         <p className="mb-3 text-[12px] text-faint">{t.historyHint}</p>
+      )}
+      {deletable.length > 0 && (
+        <div className="mb-2 flex h-7 items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-2 text-[12px] text-muted">
+            <input
+              type="checkbox"
+              className="accent-primary"
+              checked={chosen.length === deletable.length}
+              onChange={(e) => setPicked(new Set(e.target.checked ? deletable : []))}
+            />
+            {t.historySelectAll}
+          </label>
+          <span className="flex-1" />
+          {chosen.length > 0 && (
+            <Button size="sm" variant="danger" onClick={() => setConfirm(chosen)}>
+              <Trash size={13} aria-hidden="true" /> {t.historyDeleteSelected(chosen.length)}
+            </Button>
+          )}
+        </div>
       )}
       <ul className="space-y-2">
         {sorted.map((h) => {
@@ -33,6 +65,15 @@ export function HistoryDrawer(props: {
           return (
             <li key={h.job_id} className="rounded-[var(--radius-control)] border border-line bg-raised px-3 py-2.5">
               <div className="flex items-center gap-2">
+                {deletable.includes(h.job_id) && (
+                  <input
+                    type="checkbox"
+                    className="accent-primary"
+                    aria-label={t.historySelect(h.meta.roll_id)}
+                    checked={picked.has(h.job_id)}
+                    onChange={() => toggle(h.job_id)}
+                  />
+                )}
                 <span className="num text-[15px] font-bold">{h.meta.roll_id}</span>
                 <span className="num text-muted">{h.meta.camera_id}</span>
                 <Pill tone={tone}>{status}</Pill>
@@ -84,11 +125,41 @@ export function HistoryDrawer(props: {
                     <RotateCcw size={13} aria-hidden="true" /> {t.resume}
                   </Button>
                 )}
+                <span className="flex-1" />
+                {deletable.includes(h.job_id) && (
+                  <IconButton label={t.historyDelete} tone="danger" onClick={() => setConfirm([h.job_id])}>
+                    <Trash size={14} aria-hidden="true" />
+                  </IconButton>
+                )}
               </div>
             </li>
           );
         })}
       </ul>
+      {confirm && (
+        <Modal
+          tone="bad"
+          title={t.historyDeleteTitle(confirm.length)}
+          onClose={() => setConfirm(null)}
+          actions={
+            <>
+              <Button onClick={() => setConfirm(null)}>{t.cancel}</Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  props.onDelete(confirm);
+                  setPicked(new Set());
+                  setConfirm(null);
+                }}
+              >
+                {t.historyDeleteConfirm}
+              </Button>
+            </>
+          }
+        >
+          {t.historyDeleteBody}
+        </Modal>
+      )}
     </Drawer>
   );
 }

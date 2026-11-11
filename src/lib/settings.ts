@@ -1,5 +1,6 @@
 import type { Algo, Kind, Tier, VolumeInfo } from "../types";
 import { todayYmd } from "./format";
+import type { ThemePref } from "./theme";
 
 export const DEFAULT_ROLL_TEMPLATE = "{date}_{project}/{category}/{day}/{camera}/{roll}";
 export const DEFAULT_REPORT_TEMPLATE = "{date}_{project}/03_DIT_REPORTS";
@@ -18,6 +19,9 @@ export interface Project {
 export interface Settings {
   version: 1;
   language: "en" | "vi";
+  theme: ThemePref;
+  /** days to keep completed jobs in the history; 0 = forever */
+  historyKeepDays: number;
   ditName: string;
   company: string;
   logoDataUri: string | null;
@@ -40,6 +44,8 @@ export interface Settings {
   customDestinations: string[];
 }
 
+export const HISTORY_KEEP_DAYS = [0, 30, 90, 180, 365];
+
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
@@ -61,6 +67,8 @@ export function defaultSettings(): Settings {
   return {
     version: 1,
     language: "en",
+    theme: "system",
+    historyKeepDays: 0,
     ditName: "",
     company: "",
     logoDataUri: null,
@@ -98,6 +106,8 @@ export function normalizeSettings(raw: unknown): Settings {
   merged.customDestinations = Array.isArray(r.customDestinations) ? r.customDestinations : [];
   if (![1, 2, 3].includes(merged.minCopies)) merged.minCopies = 2;
   if (merged.language !== "vi") merged.language = "en";
+  if (!["system", "light", "dark"].includes(merged.theme)) merged.theme = "system";
+  if (!HISTORY_KEEP_DAYS.includes(merged.historyKeepDays)) merged.historyKeepDays = 0;
   return merged;
 }
 

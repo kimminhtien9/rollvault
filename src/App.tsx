@@ -8,6 +8,7 @@ import { isActive } from "./types";
 import type { Project, Settings } from "./lib/settings";
 import { guessFirstRoll, normalizeSettings, volumeKey } from "./lib/settings";
 import { basename } from "./lib/format";
+import { applyTheme } from "./lib/theme";
 import { DICTS, I18nProvider } from "./i18n";
 import { DestStep, type DestRow, RollStep, SourceStep, StartBar } from "./components/Setup";
 import { JobCard } from "./components/JobCard";
@@ -134,10 +135,16 @@ export default function App() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  const theme = settings?.theme;
+  useEffect(() => {
+    if (theme) return applyTheme(theme, inTauri);
+  }, [theme]);
+
   const finishedKey = jobs.filter((j) => !isActive(j.phase)).map((j) => j.id + j.phase).join(",");
+  // Also when the drawer opens: auto-clean may have removed old entries.
   useEffect(() => {
     api.history().then(setHistory).catch(() => {});
-  }, [finishedKey]);
+  }, [finishedKey, drawer]);
 
   // ---- derived -----------------------------------------------------------
   const project: Project | null = settings ? (settings.projects.find((p) => p.id === settings.activeProjectId) ?? settings.projects[0]) : null;
@@ -527,6 +534,13 @@ export default function App() {
             onReveal={(p) => guard(() => api.reveal(p))}
             onOpen={(p) => guard(() => api.openPath(p))}
             onVerify={startVerify}
+            onDelete={(ids) =>
+              guard(async () => {
+                const n = await api.deleteHistory(ids);
+                setHistory(await api.history());
+                notify(t.toastHistoryDeleted(n), "good");
+              })
+            }
           />
         )}
         {drawer === "settings" && (

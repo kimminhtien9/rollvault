@@ -194,6 +194,12 @@ export async function mockInvoke<T>(cmd: string, args?: Record<string, unknown>)
       return r(jobs);
     case "history":
       return r(history);
+    case "delete_history": {
+      const ids = (args?.ids ?? []) as string[];
+      const before = history.length;
+      for (let i = history.length - 1; i >= 0; i--) if (ids.includes(history[i].job_id)) history.splice(i, 1);
+      return r(before - history.length);
+    }
     case "verify_tasks":
       return r([]);
     case "preflight":

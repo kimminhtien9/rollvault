@@ -31,6 +31,12 @@
   --color-cascade: #a78bfa;
   --color-cascade-soft: #221b3a;
   --color-info-soft: #13213d;
+  --color-on-good: #052012;
+  --color-on-cascade: #160d2e;
+  --color-line-hover: #6b7a96;
+  --color-track: #3a4660;
+  --color-meter: #5b6b87;
+  --color-scroll: #2c3850;
 
   --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
@@ -38,6 +44,44 @@
   --radius-control: 8px;
   --radius-card: 12px;
   --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Light theme: same roles, daylight-readable values. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #eef1f6;
+  --color-surface: #ffffff;
+  --color-raised: #f4f6fa;
+  --color-sunken: #e8ecf3;
+  --color-line: #dde3ec;
+  --color-line-strong: #b4bfcf;
+  --color-ink: #0f172a;
+  --color-muted: #475569;
+  --color-faint: #64748b;
+
+  --color-primary-hover: #1d4ed8;
+  --color-link: #1d4ed8;
+  --color-good: #16a34a;
+  --color-good-ink: #15803d;
+  --color-good-soft: #dcfce7;
+  --color-warn: #d97706;
+  --color-warn-ink: #b45309;
+  --color-warn-soft: #fef3c7;
+  --color-bad: #dc2626;
+  --color-bad-ink: #b91c1c;
+  --color-bad-soft: #fee2e2;
+  --color-cascade: #7c3aed;
+  --color-cascade-soft: #ede9fe;
+  --color-info-soft: #dbeafe;
+  --color-on-cascade: #ffffff;
+  --color-line-hover: #8493a8;
+  --color-track: #c3ccd9;
+  --color-meter: #94a3b8;
+  --color-scroll: #c5cdd9;
 }
 
 html,
@@ -58,7 +102,6 @@ body {
   user-select: none;
   -webkit-user-select: none;
   overflow: hidden;
-  color-scheme: dark;
 }
 
 input,
@@ -80,7 +123,7 @@ textarea,
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2c3850;
+  background: var(--color-scroll);
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: padding-box;
@@ -103,11 +146,11 @@ textarea,
   transition: border-color 150ms var(--ease-ui), box-shadow 150ms var(--ease-ui);
 }
 .field:hover {
-  border-color: #6b7a96;
+  border-color: var(--color-line-hover);
 }
 .field:focus {
   border-color: var(--color-link);
-  box-shadow: 0 0 0 3px rgb(124 178 255 / 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-link) 22%, transparent);
 }
 .field:disabled {
   opacity: 0.5;

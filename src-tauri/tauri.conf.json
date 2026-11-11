@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "RollVault",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.rollvault.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -20,7 +20,6 @@
         "minHeight": 760,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "theme": "Dark",
         "backgroundColor": "#0c0e12"
       }
     ],

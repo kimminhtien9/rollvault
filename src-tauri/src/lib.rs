@@ -12,7 +12,7 @@ use rollvault_core::{darwin_io, tools};
 use serde::Serialize;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
@@ -54,6 +54,11 @@ async fn off_main<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> 
 fn apply_language(settings: &Value) {
     let vi = settings.get("language").and_then(Value::as_str) == Some("vi");
     rollvault_core::l10n::set_vietnamese(vi);
+}
+
+/// Days to keep completed jobs in the history (0 = keep forever).
+fn history_keep_days(settings: &Value) -> u32 {
+    settings.get("historyKeepDays").and_then(Value::as_u64).map(|d| d.min(3650) as u32).unwrap_or(0)
 }
 
 fn debug_log(msg: &str) {
@@ -134,6 +139,13 @@ async fn history(state: Shared<'_>) -> Result<Vec<HistoryEntry>, String> {
     Ok(state.engine.history())
 }
 
+/// Remove finished jobs from the history (app data only, footage is never touched).
+#[tauri::command]
+async fn delete_history(state: Shared<'_>, ids: Vec<String>) -> Result<usize, String> {
+    let engine = state.engine.clone();
+    off_main(move || engine.delete_history(&ids)).await
+}
+
 #[tauri::command]
 async fn eject_source(state: Shared<'_>, id: String) -> Result<(), String> {
     let engine = state.engine.clone();
@@ -187,9 +199,12 @@ async fn save_settings(state: Shared<'_>, settings: Value) -> Result<(), String>
     let sounds = settings.get("sounds").and_then(Value::as_bool).unwrap_or(true);
     let notifications = settings.get("notifications").and_then(Value::as_bool).unwrap_or(true);
     state.engine.set_alerts(sounds, notifications);
+    let keep = history_keep_days(&settings);
     if let Ok(mut s) = state.settings.lock() {
         *s = settings;
     }
+    let engine = state.engine.clone();
+    off_main(move || engine.prune_history(keep)).await?;
     Ok(())
 }
 
@@ -231,17 +246,21 @@ async fn next_roll(roll: String) -> Result<String, String> {
 async fn export_pdf(html: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let src = PathBuf::from(&html);
-        let tmp = std::env::temp_dir().join(format!("rollvault-pdf-{}", std::process::id()));
+        // One private folder per export: two exports at once must not share
+        // (or delete) each other's files.
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        let tmp = std::env::temp_dir().join(format!("rollvault-pdf-{}-{}", std::process::id(), SEQ.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir_all(&tmp).map_err(|e| e.to_string())?;
         let name = src.file_stem().and_then(|s| s.to_str()).unwrap_or("report").to_string();
         let tmp_html = tmp.join(format!("{name}.html"));
         let tmp_pdf = tmp.join(format!("{name}.pdf"));
-        std::fs::copy(&src, &tmp_html).map_err(|e| e.to_string())?;
-        tools::html_to_pdf(&tmp_html, &tmp_pdf)?;
         let dst = src.with_extension("pdf");
-        std::fs::copy(&tmp_pdf, &dst).map_err(|e| e.to_string())?;
+        let res = std::fs::copy(&src, &tmp_html)
+            .map_err(|e| e.to_string())
+            .and_then(|_| tools::html_to_pdf(&tmp_html, &tmp_pdf))
+            .and_then(|_| std::fs::copy(&tmp_pdf, &dst).map_err(|e| e.to_string()));
         let _ = std::fs::remove_dir_all(&tmp);
-        Ok(dst.display().to_string())
+        res.map(|_| dst.display().to_string())
     })
     .await
     .map_err(|e| e.to_string())?
@@ -365,6 +384,9 @@ pub fn run() {
                 sounds,
                 notifications,
             });
+            let keep = history_keep_days(&settings);
+            let pruner = engine.clone();
+            std::thread::spawn(move || pruner.prune_history(keep));
             start_watchers(app.handle().clone(), engine.clone());
             app.manage(AppState {
                 engine,
@@ -394,6 +416,7 @@ pub fn run() {
             resume_job,
             jobs,
             history,
+            delete_history,
             eject_source,
             eject_volume,
             reveal,

@@ -725,3 +725,61 @@ fn hung_cascade_drive_does_not_hang_the_job() {
     assert!(!s.dests[2].complete);
     assert!(s.dests[2].error.as_deref().unwrap_or("").contains("stopped responding"), "{:?}", s.dests[2].error);
 }
+
+fn history_entry(id: &str, status: &str, age_days: i64) -> serde_json::Value {
+    let at = chrono::Utc::now() - chrono::Duration::days(age_days);
+    serde_json::json!({
+        "job_id": id,
+        "created_at": at,
+        "finished_at": at,
+        "status": status,
+        "meta": meta("A001"),
+        "source": "/Volumes/CARD",
+        "source_label": "CARD",
+        "fingerprint": id,
+        "file_count": 1,
+        "total_bytes": 1,
+        "dests": [],
+        "report_path": null,
+        "safe_to_eject": true,
+        "errors": [],
+    })
+}
+
+#[test]
+fn history_delete_and_auto_clean() {
+    let data = tempfile::tempdir().unwrap();
+    let keep = data.path().join("keep.txt");
+    std::fs::write(&keep, b"x").unwrap();
+    let entries = vec![
+        history_entry("old-done", "completed", 100),
+        history_entry("new-done", "completed", 1),
+        history_entry("old-failed", "failed", 100),
+        history_entry("../keep.txt", "completed", 1),
+    ];
+    std::fs::write(data.path().join("history.json"), serde_json::to_vec(&entries).unwrap()).unwrap();
+    for id in ["old-done", "new-done", "old-failed"] {
+        std::fs::create_dir_all(data.path().join("jobs").join(id)).unwrap();
+    }
+    let e = engine(data.path());
+    assert_eq!(e.history().len(), 4);
+
+    // Auto-clean: only completed jobs past the limit; 0 days keeps everything.
+    assert_eq!(e.prune_history(0), 0);
+    assert_eq!(e.prune_history(90), 1);
+    assert!(!data.path().join("jobs/old-done").exists());
+    assert!(data.path().join("jobs/old-failed").exists());
+
+    // Manual delete: unknown ids are ignored, journals go with their entry.
+    assert_eq!(e.delete_history(&["old-failed".into(), "nope".into()]), 1);
+    assert!(!data.path().join("jobs/old-failed").exists());
+
+    // A tampered id never deletes outside <data>/jobs.
+    assert_eq!(e.delete_history(&["../keep.txt".into()]), 1);
+    assert!(keep.exists());
+
+    // Survives a restart.
+    drop(e);
+    let ids: Vec<String> = engine(data.path()).history().into_iter().map(|h| h.job_id).collect();
+    assert_eq!(ids, vec!["new-done".to_string()]);
+}

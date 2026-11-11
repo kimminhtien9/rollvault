@@ -18,6 +18,7 @@ export const api = {
   resumeJob: (id: string) => invoke<string>("resume_job", { id }),
   jobs: () => invoke<JobSnapshot[]>("jobs"),
   history: () => invoke<HistoryEntry[]>("history"),
+  deleteHistory: (ids: string[]) => invoke<number>("delete_history", { ids }),
   ejectSource: (id: string) => invoke<void>("eject_source", { id }),
   ejectVolume: (mount: string) => invoke<void>("eject_volume", { mount }),
   reveal: (path: string) => invoke<void>("reveal", { path }),

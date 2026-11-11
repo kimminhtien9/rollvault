@@ -1,7 +1,7 @@
 {
   "name": "rollvault",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "RollVault: DIT offload, verification and camera reports for macOS",
   "scripts": {

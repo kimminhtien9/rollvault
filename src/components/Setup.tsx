@@ -416,8 +416,8 @@ export function DestStep(props: {
                   onChange={(c) => props.onTier(r.path, c)}
                   options={[
                     { value: "off", label: t.off },
-                    { value: "primary", label: t.tier1, active: "bg-good text-[#052012]", title: t.tier1Hint },
-                    { value: "cascade", label: t.cascade, active: "bg-cascade text-[#160d2e]", title: t.cascadeHint },
+                    { value: "primary", label: t.tier1, active: "bg-good text-on-good", title: t.tier1Hint },
+                    { value: "cascade", label: t.cascade, active: "bg-cascade text-on-cascade", title: t.cascadeHint },
                   ]}
                 />
               </div>
